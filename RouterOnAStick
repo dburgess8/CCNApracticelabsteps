@@ -1,0 +1,88 @@
+# Router on a stick steps
+
+1. Create VLANs and assign access ports
+
+# On the switch
+vlan 10
+ name SALES
+vlan 20
+ name IT
+vlan 30
+ name CORPORATE
+
+interface range fa0/2 - 3
+ switchport mode access
+ switchport access vlan 10
+
+interface range fa0/4 - 5
+ switchport mode access
+ switchport access vlan 20
+
+interface range fa0/6 - 7
+ switchport mode access
+ switchport access vlan 30
+
+2. Configure trunk port to router
+
+# Assuming router is connected to Fa0/1
+interface fa0/1
+ switchport trunk encapsulation dot1q
+ switchport trunk allowed vlan 10,20,30
+ switchport mode trunk
+
+3. Configure router subinterfaces
+
+# On the router
+interface g0/0/0.10
+ description VLAN 10 Gateway
+ encapsulation dot1Q 10
+ ip address 192.168.10.1 255.255.255.0
+
+interface g0/0/0.20
+ description VLAN 20 Gateway
+ encapsulation dot1Q 20
+ ip address 192.168.20.1 255.255.255.0
+
+interface g0/0/0.30
+ description VLAN 30 Gateway
+ encapsulation dot1Q 30
+ ip address 192.168.30.1 255.255.255.0
+
+interface g0/0/0
+ no shutdown
+
+4. Configure DHCP pools
+
+ip dhcp excluded-address 192.168.10.1 192.168.10.10
+ip dhcp excluded-address 192.168.20.1 192.168.20.10
+ip dhcp excluded-address 192.168.30.1 192.168.30.10
+
+ip dhcp pool VLAN10
+ network 192.168.10.0 255.255.255.0
+ default-router 192.168.10.1
+ dns-server 8.8.8.8
+
+ip dhcp pool VLAN20
+ network 192.168.20.0 255.255.255.0
+ default-router 192.168.20.1
+ dns-server 8.8.8.8
+
+ip dhcp pool VLAN30
+ network 192.168.30.0 255.255.255.0
+ default-router 192.168.30.1
+ dns-server 8.8.8.8
+
+5. Optional, STP root bridge configuration
+
+# Set switch as root for VLAN 1
+spanning-tree vlan 1 priority 4096
+
+6. Apply ACL to restrict VLAN 20 from accessing VLAN 10
+
+access-list 100 deny ip 192.168.20.0 0.0.0.255 192.168.10.0 0.0.0.255
+access-list 100 permit ip any any
+
+interface g0/0/0.20
+ ip access-group 100 in
+
+Purpose: This ACL blocks any IP traffic from VLAN 20 to VLAN 10. All other traffic is allowed. Applied inbound to VLAN 20’s subinterface.
