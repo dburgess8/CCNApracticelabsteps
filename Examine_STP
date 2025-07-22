@@ -1,0 +1,49 @@
+# === STP Lab Plan with Wireshark ===
+
+# STEP 1: Build Physical Topology (Triangle)
+# SW1 <--> SW2
+# SW2 <--> SW3
+# SW3 <--> SW1
+
+# STEP 2: Configure Hostnames
+conf t
+hostname SW1
+exit
+# Repeat for SW2, SW3
+
+# STEP 3: Make SW1 Root Bridge
+conf t
+spanning-tree vlan 1 priority 24576
+exit
+
+# STEP 4: Enable RSTP Mode
+conf t
+spanning-tree mode rapid-pvst
+exit
+
+# STEP 5: Enable PortFast on Access Ports (host-facing)
+conf t
+interface range f0/1 - 2
+spanning-tree portfast
+spanning-tree bpduguard enable
+exit
+
+# STEP 6: Launch Wireshark (on PC or laptop connected to one of the switches)
+# Filter: stp OR rstp
+# Alt filter: eth.dst == 01:80:C2:00:00:00
+
+# What to look for:
+# - STP BPDUs (Configuration or TCN types)
+# - Root ID, Bridge ID, Port ID
+# - Changes in topology (TCN flags)
+# - RSTP Role/State transitions (Proposal/Agreement bits)
+
+# STEP 7: Trigger Topology Change
+# Disconnect one trunk cable (e.g., SW3 <--> SW2)
+# Observe BPDU propagation and role change in Wireshark + CLI:
+show spanning-tree vlan 1
+
+# STEP 8: Restore Link
+# Plug cable back in and watch STP reconverge in Wireshark
+# Confirm again in CLI:
+show spanning-tree summary
