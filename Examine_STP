@@ -47,3 +47,40 @@ show spanning-tree vlan 1
 # Plug cable back in and watch STP reconverge in Wireshark
 # Confirm again in CLI:
 show spanning-tree summary
+
+# Additional Steps to Comprehend STP process
+# 1. Manipulate the port cost
+interface f0/3
+spanning-tree vlan 1 cost 19
+
+# 2. Observe BPDU Guard in Action
+# On Access Port:
+spanning-tree portfast
+spanning-tree bpduguard enable
+
+# Plug in another switch and watch the port shutdown
+show errdisable recovery  --> check recovery config
+
+# 3. Compare Legacy STP vs RSTP
+conf t
+spanning-tree mode pvst
+exit
+
+# Examine the convergence speed and BPDU structure
+
+# 4. Simulate a topology change notification (TCN)
+interface f0/1
+shutdown
+no shutdown
+
+# Wireshark: observe TCN BPDU
+# Verify in CLI
+show spanning-tree detail | include occurred
+
+# 5. Loop Prevention Demo
+conf t
+no spanning-tree vlan 1
+exit
+
+# Will cause MAC-flapping and broadcast storms
+# Reinstate STP
